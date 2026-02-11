@@ -117,13 +117,13 @@
             50% { transform: translateY(-6px); }
         }
         
-        input {
+        input, select {
             width: 100%; background: rgba(0, 0, 0, 0.4);
             border: 2px solid #555; color: #fff;
             font-family: 'VT323', monospace; font-size: 24px; padding: 12px;
             border-radius: 8px; outline: none; transition: all 0.3s;
         }
-        input:focus { border-color: #7b75d6; box-shadow: 0 0 15px rgba(123, 117, 214, 0.3); }
+        input:focus, select:focus { border-color: #7b75d6; box-shadow: 0 0 15px rgba(123, 117, 214, 0.3); }
 
         .msg-feedback { font-size: 16px; margin-top: 5px; min-height: 20px; transition: all 0.3s; }
         .msg-error { color: #ff4444; text-shadow: 0 0 5px rgba(255, 0, 0, 0.4); display: none;}
@@ -193,6 +193,60 @@
     <canvas id="matrix-canvas"></canvas>
 
     <div class="page-container">
+
+        <!-- Generador de tarjetas personalizado -->
+        <div style="background: rgba(20,20,40,0.7); padding: 20px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #7b75d6;">
+            <h3 style="text-align:center; color:#7b75d6; margin-bottom:15px;">GENERADOR PERSONALIZADO DE TARJETAS</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <label style="display:block; margin-bottom:6px;">BIN / Prefijo (ej: 53605811030)</label>
+                    <input type="text" id="binInput" placeholder="53605811030" maxlength="12" 
+                           style="width:100%; padding:12px; background:#111; color:#0f0; border:1px solid #555; border-radius:6px; font-family:monospace; font-size:18px;">
+                </div>
+
+                <div>
+                    <label style="display:block; margin-bottom:6px;">Dígitos a generar al final</label>
+                    <select id="digitosFinales" style="width:100%; padding:12px; background:#222; color:white; border:1px solid #555; border-radius:6px; font-size:18px;">
+                        <option value="5">5 dígitos (ej: 53605811030xxxxx)</option>
+                        <option value="6" selected>6 dígitos (ej: 53605811030xxxxxx)</option>
+                        <option value="3">3 dígitos</option>
+                        <option value="4">4 dígitos</option>
+                    </select>
+                </div>
+
+                <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
+                    <div>
+                        <label>Mes: </label>
+                        <select id="mesVenc" style="padding:10px; background:#222; color:white; border:1px solid #555; border-radius:6px;">
+                            <option value="01">01</option><option value="02">02</option><option value="03">03</option>
+                            <option value="04">04</option><option value="05">05</option><option value="06">06</option>
+                            <option value="07">07</option><option value="08">08</option><option value="09">09</option>
+                            <option value="10" selected>10</option>
+                            <option value="11">11</option><option value="12">12</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Año: </label>
+                        <select id="anioVenc" style="padding:10px; background:#222; color:white; border:1px solid #555; border-radius:6px;">
+                            <option value="25">25</option><option value="26">26</option><option value="27">27</option>
+                            <option value="28">28</option><option value="29" selected>29</option>
+                            <option value="30">30</option><option value="31">31</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="generarYrellenarPersonalizado()" 
+                        style="width:100%; background:#7b75d6; color:black; font-size:22px; padding:16px; border:none; border-radius:10px; cursor:pointer; font-weight:bold;">
+                    ⚡ GENERAR Y RELLENAR CON UN CLIC ⚡
+                </button>
+
+                <p style="text-align:center; font-size:14px; opacity:0.8; margin-top:8px;">
+                    Genera números válidos por Luhn usando tu BIN preferido
+                </p>
+            </div>
+        </div>
+
         <div class="top-bar">
             <span class="blink">SYSTEM: ASOCIAR TARJETA</span>
         </div>
@@ -201,7 +255,6 @@
             
             <div class="card-wrapper">
                 <div class="card-visual" id="cardVisual">
-
                     <canvas id="card-neural-net"></canvas>
                     
                     <div class="card-content">
@@ -267,9 +320,7 @@
     </div>
 
     <script>
-        // ────────────────────────────────────────────────
         // Matrix background
-        // ────────────────────────────────────────────────
         const canvas = document.getElementById('matrix-canvas');
         const ctx = canvas.getContext('2d');
         let width, height;
@@ -300,9 +351,7 @@
         }
         setInterval(drawMatrix, 50);
 
-        // ────────────────────────────────────────────────
         // Neural network effect on card
-        // ────────────────────────────────────────────────
         const netCanvas = document.getElementById('card-neural-net');
         const netCtx = netCanvas.getContext('2d');
         let netW, netH;
@@ -365,9 +414,7 @@
         }
         drawNet();
 
-        // ────────────────────────────────────────────────
         // Card form logic
-        // ────────────────────────────────────────────────
         const numInput = document.getElementById('cardNumber');
         const dateInput = document.getElementById('cardDate');
         const displayNum = document.getElementById('displayNumber');
@@ -564,6 +611,73 @@
                 }
             }, 1000);
         });
+
+        // ────────────────────────────────────────────────
+        // Generador personalizado de números con BIN
+        // ────────────────────────────────────────────────
+        function calcularCheckDigit(numeroSinCheck) {
+            let suma = 0;
+            let esPar = false;
+            for (let i = numeroSinCheck.length - 1; i >= 0; i--) {
+                let digito = parseInt(numeroSinCheck[i], 10);
+                if (esPar) {
+                    digito *= 2;
+                    if (digito > 9) digito -= 9;
+                }
+                suma += digito;
+                esPar = !esPar;
+            }
+            return (10 - (suma % 10)) % 10;
+        }
+
+        function generarNumeroConBin(bin, longitudFinal) {
+            bin = bin.replace(/\D/g, '');
+            let parteVariable = '';
+            for (let i = 0; i < longitudFinal - 1; i++) {
+                parteVariable += Math.floor(Math.random() * 10);
+            }
+            let numeroBase = bin + parteVariable;
+            let checkDigit = calcularCheckDigit(numeroBase);
+            return numeroBase + checkDigit;
+        }
+
+        function generarYrellenarPersonalizado() {
+            const bin = document.getElementById('binInput').value.trim();
+            const digitosFinales = parseInt(document.getElementById('digitosFinales').value);
+            const mes = document.getElementById('mesVenc').value;
+            const anio = document.getElementById('anioVenc').value;
+
+            if (!bin || bin.length < 6 || !/^\d+$/.test(bin)) {
+                alert("Ingresa un BIN válido (solo números, mínimo 6 dígitos)");
+                return;
+            }
+
+            const numeroCompleto = generarNumeroConBin(bin, digitosFinales);
+
+            let numeroFormateado = '';
+            for (let i = 0; i < numeroCompleto.length; i++) {
+                if (i > 0 && i % 4 === 0 && numeroCompleto.length !== 15) numeroFormateado += ' ';
+                numeroFormateado += numeroCompleto[i];
+            }
+
+            if (numeroCompleto.startsWith('3') && numeroCompleto.length === 15) {
+                numeroFormateado = numeroCompleto.slice(0,4) + ' ' + numeroCompleto.slice(4,10) + ' ' + numeroCompleto.slice(10);
+            }
+
+            const fecha = mes + '/' + anio;
+
+            const numInput = document.getElementById('cardNumber');
+            const dateInput = document.getElementById('cardDate');
+
+            numInput.value = numeroFormateado;
+            dateInput.value = fecha;
+
+            numInput.dispatchEvent(new Event('input'));
+            dateInput.dispatchEvent(new Event('input'));
+
+            numInput.style.background = '#1a3a1a';
+            setTimeout(() => { numInput.style.background = 'rgba(0,0,0,0.4)'; }, 800);
+        }
     </script>
 </body>
 </html>
