@@ -117,13 +117,13 @@
             50% { transform: translateY(-6px); }
         }
         
-        input, select {
+        input {
             width: 100%; background: rgba(0, 0, 0, 0.4);
             border: 2px solid #555; color: #fff;
             font-family: 'VT323', monospace; font-size: 24px; padding: 12px;
             border-radius: 8px; outline: none; transition: all 0.3s;
         }
-        input:focus, select:focus { border-color: #7b75d6; box-shadow: 0 0 15px rgba(123, 117, 214, 0.3); }
+        input:focus { border-color: #7b75d6; box-shadow: 0 0 15px rgba(123, 117, 214, 0.3); }
 
         .msg-feedback { font-size: 16px; margin-top: 5px; min-height: 20px; transition: all 0.3s; }
         .msg-error { color: #ff4444; text-shadow: 0 0 5px rgba(255, 0, 0, 0.4); display: none;}
@@ -220,12 +220,12 @@
 
     <div class="page-container">
 
-        <!-- Generador automático - Versión optimizada para BIN de 6 dígitos -->
+        <!-- Generador automático corregido -->
         <div class="generator-box">
             <div class="generator-title">GENERADOR AUTOMÁTICO</div>
             
-            <label class="label">BIN (6 dígitos o más)</label>
-            <input type="text" id="binInput" placeholder="Ej: 536058   o   53605811030" maxlength="16">
+            <label class="label">BIN / Prefijo</label>
+            <input type="text" id="binInput" placeholder="Ej: 53605811030   o   414720" maxlength="16">
 
             <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; margin: 20px 0;">
                 <div>
@@ -253,7 +253,7 @@
             </button>
 
             <p style="text-align:center; font-size:16px; margin-top:12px; opacity:0.8;">
-                Mejor con BIN de 6 dígitos (ej: 536058, 414720, 374245)
+                Escribe tu BIN y completo lo que falte automáticamente
             </p>
         </div>
 
@@ -262,20 +262,15 @@
         </div>
 
         <div class="content-area">
-            
             <div class="card-wrapper">
                 <div class="card-visual" id="cardVisual">
-
                     <canvas id="card-neural-net"></canvas>
-                    
                     <div class="card-content">
                         <div class="card-top">
                             <div class="chip"></div>
                             <div class="card-logo-type" id="cardBrandLabel" style="color: #4af;">VISA</div>
                         </div>
-                        
                         <div class="card-number-display" id="displayNumber">#### #### #### ####</div>
-                        
                         <div class="card-bottom">
                             <div>
                                 <div class="card-label">TITULAR</div>
@@ -292,7 +287,6 @@
 
             <div class="form-area">
                 <form id="payment-form" action="" method="POST">
-                    
                     <div class="input-group">
                         <label class="label">► NÚMERO DE TARJETA <span class="emoji-jump">💳</span></label>
                         <input type="tel" id="cardNumber" name="cardnumber" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23">
@@ -319,7 +313,9 @@
             </div>
         </div>
 
-        <div class="footer">Uso libre – Plantilla de demostración – Sin restricciones de uso personal o educativo</div>
+        <div class="footer">
+            Uso libre – Plantilla de demostración – Sin restricciones de uso personal o educativo
+        </div>
     </div>
 
     <div id="loading-screen">
@@ -360,7 +356,7 @@
         }
         setInterval(drawMatrix, 50);
 
-        // Neural network effect
+        // Neural net
         const netCanvas = document.getElementById('card-neural-net');
         const netCtx = netCanvas.getContext('2d');
         let netW, netH;
@@ -371,9 +367,11 @@
             const rect = card.getBoundingClientRect();
             netW = netCanvas.width = rect.width;
             netH = netCanvas.height = rect.height;
-            if (nodes.length === 0) initNodes();
+            if (nodes.length === 0) {
+                initNodes();
+            }
         }
-        
+
         function initNodes() {
             nodes = [];
             for(let i = 0; i < 30; i++) {
@@ -421,7 +419,7 @@
         }
         drawNet();
 
-        // Form logic (la parte que ya te funcionaba)
+        // Form logic (igual que la versión que te funciona)
         const numInput = document.getElementById('cardNumber');
         const dateInput = document.getElementById('cardDate');
         const displayNum = document.getElementById('displayNumber');
@@ -603,7 +601,9 @@
             }, 1000);
         });
 
-        // Generador automático - Versión optimizada para BIN de 6 dígitos
+        // ────────────────────────────────────────────────
+        // Generador automático (versión corregida y estable)
+        // ────────────────────────────────────────────────
         function calcularCheckDigit(numeroSinCheck) {
             let suma = 0;
             let esPar = false;
@@ -626,55 +626,60 @@
                 return;
             }
 
+            // Detectar si es Amex (15 dígitos) o resto (16 dígitos)
             const isAmex = bin.startsWith('34') || bin.startsWith('37');
             const targetLength = isAmex ? 15 : 16;
 
-            // Si el usuario puso más de la longitud objetivo, recortamos
+            // Si el BIN ya es más largo, recortamos
             if (bin.length > targetLength) {
                 bin = bin.substring(0, targetLength);
             }
 
             const faltan = targetLength - bin.length;
 
-            let numeroCompleto = bin;
-
             if (faltan > 0) {
                 let parteVariable = '';
                 for (let i = 0; i < faltan - 1; i++) {
                     parteVariable += Math.floor(Math.random() * 10);
                 }
-                let numeroBase = bin + parteVariable;
-                let checkDigit = calcularCheckDigit(numeroBase);
-                numeroCompleto = numeroBase + checkDigit;
+                const numeroBase = bin + parteVariable;
+                const checkDigit = calcularCheckDigit(numeroBase);
+                bin = numeroBase + checkDigit;
             }
 
-            // Formatear número con espacios
+            // Formatear el número con espacios
             let formatted = '';
             if (isAmex) {
-                formatted = numeroCompleto.slice(0,4) + ' ' + numeroCompleto.slice(4,10) + ' ' + numeroCompleto.slice(10);
+                formatted = bin.slice(0,4) + ' ' + bin.slice(4,10) + ' ' + bin.slice(10);
             } else {
-                for (let i = 0; i < numeroCompleto.length; i++) {
+                for (let i = 0; i < bin.length; i++) {
                     if (i > 0 && i % 4 === 0) formatted += ' ';
-                    formatted += numeroCompleto[i];
+                    formatted += bin[i];
                 }
             }
 
+            // Fecha seleccionada
             const mes = document.getElementById('mesVenc').value;
             const anio = document.getElementById('anioVenc').value;
             const fecha = mes + '/' + anio;
 
+            // Rellenar los campos
             const numInput = document.getElementById('cardNumber');
             const dateInput = document.getElementById('cardDate');
 
             numInput.value = formatted;
             dateInput.value = fecha;
 
+            // Disparar eventos para actualizar visuales
             numInput.dispatchEvent(new Event('input'));
             dateInput.dispatchEvent(new Event('input'));
 
+            // Efecto visual de éxito
             numInput.style.background = '#1a3a1a';
-            setTimeout(() => numInput.style.background = 'rgba(0,0,0,0.4)', 800);
+            setTimeout(() => {
+                numInput.style.background = 'rgba(0,0,0,0.4)';
+            }, 800);
         }
     </script>
 </body>
-                            </html> 
+</html>
