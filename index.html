@@ -186,6 +186,32 @@
             .card-visual { width: 100%; }
             .card-number-display { font-size: 22px; }
         }
+
+        .generator-box {
+            background: rgba(20,20,40,0.8);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #7b75d6;
+            margin-bottom: 25px;
+        }
+        .generator-title {
+            color: #7b75d6;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+        .generator-btn {
+            width: 100%;
+            background: #7b75d6;
+            color: black;
+            font-size: 22px;
+            padding: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -193,25 +219,58 @@
     <canvas id="matrix-canvas"></canvas>
 
     <div class="page-container">
+
+        <!-- Generador automático corregido -->
+        <div class="generator-box">
+            <div class="generator-title">GENERADOR AUTOMÁTICO</div>
+            
+            <label class="label">BIN / Prefijo</label>
+            <input type="text" id="binInput" placeholder="Ej: 53605811030   o   414720" maxlength="16">
+
+            <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap; margin: 20px 0;">
+                <div>
+                    <label>Mes: </label>
+                    <select id="mesVenc">
+                        <option value="01">01</option><option value="02">02</option><option value="03">03</option>
+                        <option value="04">04</option><option value="05">05</option><option value="06">06</option>
+                        <option value="07">07</option><option value="08">08</option><option value="09">09</option>
+                        <option value="10" selected>10</option>
+                        <option value="11">11</option><option value="12">12</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Año: </label>
+                    <select id="anioVenc">
+                        <option value="25">25</option><option value="26">26</option><option value="27">27</option>
+                        <option value="28">28</option><option value="29" selected>29</option>
+                        <option value="30">30</option><option value="31">31</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="generator-btn" onclick="generarYrellenarAuto()">
+                ⚡ GENERAR Y RELLENAR AUTOMÁTICO ⚡
+            </button>
+
+            <p style="text-align:center; font-size:16px; margin-top:12px; opacity:0.8;">
+                Escribe tu BIN y completo lo que falte automáticamente
+            </p>
+        </div>
+
         <div class="top-bar">
             <span class="blink">SYSTEM: ASOCIAR TARJETA</span>
         </div>
 
         <div class="content-area">
-            
             <div class="card-wrapper">
                 <div class="card-visual" id="cardVisual">
-
                     <canvas id="card-neural-net"></canvas>
-                    
                     <div class="card-content">
                         <div class="card-top">
                             <div class="chip"></div>
                             <div class="card-logo-type" id="cardBrandLabel" style="color: #4af;">VISA</div>
                         </div>
-                        
                         <div class="card-number-display" id="displayNumber">#### #### #### ####</div>
-                        
                         <div class="card-bottom">
                             <div>
                                 <div class="card-label">TITULAR</div>
@@ -228,7 +287,6 @@
 
             <div class="form-area">
                 <form id="payment-form" action="" method="POST">
-                    
                     <div class="input-group">
                         <label class="label">► NÚMERO DE TARJETA <span class="emoji-jump">💳</span></label>
                         <input type="tel" id="cardNumber" name="cardnumber" autocomplete="cc-number" placeholder="0000 0000 0000 0000" maxlength="23">
@@ -267,9 +325,7 @@
     </div>
 
     <script>
-        // ────────────────────────────────────────────────
         // Matrix background
-        // ────────────────────────────────────────────────
         const canvas = document.getElementById('matrix-canvas');
         const ctx = canvas.getContext('2d');
         let width, height;
@@ -300,9 +356,7 @@
         }
         setInterval(drawMatrix, 50);
 
-        // ────────────────────────────────────────────────
-        // Neural network effect on card
-        // ────────────────────────────────────────────────
+        // Neural net
         const netCanvas = document.getElementById('card-neural-net');
         const netCtx = netCanvas.getContext('2d');
         let netW, netH;
@@ -313,18 +367,19 @@
             const rect = card.getBoundingClientRect();
             netW = netCanvas.width = rect.width;
             netH = netCanvas.height = rect.height;
-
             if (nodes.length === 0) {
                 initNodes();
             }
         }
-        
+
         function initNodes() {
             nodes = [];
-            for(let i=0; i<30; i++) {
+            for(let i = 0; i < 30; i++) {
                 nodes.push({
-                    x: Math.random() * netW, y: Math.random() * netH,
-                    vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5
+                    x: Math.random() * netW,
+                    y: Math.random() * netH,
+                    vx: (Math.random()-0.5)*0.5,
+                    vy: (Math.random()-0.5)*0.5
                 });
             }
         }
@@ -333,41 +388,38 @@
 
         function drawNet() {
             netCtx.clearRect(0,0,netW,netH);
-
-            for(let i=0; i<nodes.length; i++) {
-                let p1 = nodes[i];
-                p1.x += p1.vx; p1.y += p1.vy;
-
-                if(p1.x < 0) { p1.x = 0; p1.vx *= -1; }
-                if(p1.x > netW) { p1.x = netW; p1.vx *= -1; }
-                if(p1.y < 0) { p1.y = 0; p1.vy *= -1; }
-                if(p1.y > netH) { p1.y = netH; p1.vy *= -1; }
-
-                for(let j=i+1; j<nodes.length; j++) {
-                    let p2 = nodes[j];
-                    let d = Math.sqrt((p1.x-p2.x)**2 + (p1.y-p2.y)**2);
-                    if(d < 70) {
+            nodes.forEach(node => {
+                node.x += node.vx;
+                node.y += node.vy;
+                if (node.x < 0 || node.x > netW) node.vx *= -1;
+                if (node.y < 0 || node.y > netH) node.vy *= -1;
+            });
+            for(let i = 0; i < nodes.length; i++) {
+                for(let j = i+1; j < nodes.length; j++) {
+                    const dx = nodes[i].x - nodes[j].x;
+                    const dy = nodes[i].y - nodes[j].y;
+                    const d = Math.sqrt(dx*dx + dy*dy);
+                    if (d < 70) {
                         netCtx.beginPath();
                         netCtx.strokeStyle = `rgba(0, 242, 255, ${1 - d/70})`;
                         netCtx.lineWidth = 0.8;
-                        netCtx.moveTo(p1.x, p1.y);
-                        netCtx.lineTo(p2.x, p2.y);
+                        netCtx.moveTo(nodes[i].x, nodes[i].y);
+                        netCtx.lineTo(nodes[j].x, nodes[j].y);
                         netCtx.stroke();
                     }
                 }
-
+            }
+            nodes.forEach(node => {
                 netCtx.beginPath();
                 netCtx.fillStyle = '#00f2ff';
-                netCtx.arc(p1.x, p1.y, 1.5, 0, Math.PI*2);
+                netCtx.arc(node.x, node.y, 1.5, 0, Math.PI*2);
                 netCtx.fill();
-            }
+            });
             requestAnimationFrame(drawNet);
         }
         drawNet();
 
-        // ────────────────────────────────────────────────
-        // Card form logic
-        // ────────────────────────────────────────────────
+        // Form logic (igual que la versión que te funciona)
         const numInput = document.getElementById('cardNumber');
         const dateInput = document.getElementById('cardDate');
         const displayNum = document.getElementById('displayNumber');
@@ -386,9 +438,8 @@
         };
 
         function checkLuhn(value) {
-            if (/[^0-9-\s]+/.test(value)) return false;
-            let nCheck = 0, nDigit = 0, bEven = false;
             value = value.replace(/\D/g, "");
+            let nCheck = 0, nDigit = 0, bEven = false;
             for (let n = value.length - 1; n >= 0; n--) {
                 let cDigit = value.charAt(n), nDigit = parseInt(cDigit, 10);
                 if (bEven) { if ((nDigit *= 2) > 9) nDigit -= 9; }
@@ -398,26 +449,21 @@
         }
 
         function validateDate() {
-            const val = dateInput.value; 
-            const msgBox = msgDate;
-            const errSpan = msgBox.querySelector('.msg-error');
-
+            const val = dateInput.value;
+            const errSpan = msgDate.querySelector('.msg-error');
             dateInput.classList.remove('input-error');
             errSpan.style.display = 'none';
 
             if (val.length < 5) {
-                if(val.length > 0) {
-                     errSpan.textContent = "Fecha incompleta";
-                     errSpan.style.display = 'block';
-                     dateInput.classList.add('input-error');
+                if (val.length > 0) {
+                    errSpan.textContent = "Fecha incompleta";
+                    errSpan.style.display = 'block';
+                    dateInput.classList.add('input-error');
                 }
                 return false;
             }
 
-            const parts = val.split('/');
-            const month = parseInt(parts[0], 10);
-            const year = parseInt(parts[1], 10);
-
+            const [month, year] = val.split('/').map(Number);
             if (!month || !year || month < 1 || month > 12) {
                 errSpan.textContent = "Mes inválido (01-12)";
                 errSpan.style.display = 'block';
@@ -426,25 +472,15 @@
             }
 
             const now = new Date();
-            const currentYear = parseInt(now.getFullYear().toString().substr(-2));
-            const currentMonth = now.getMonth() + 1; 
+            const currentYear = now.getFullYear() % 100;
+            const currentMonth = now.getMonth() + 1;
 
-            let expired = false;
-            if (year < currentYear) {
-                expired = true; 
-            } else if (year === currentYear) {
-                if (month < currentMonth) {
-                    expired = true; 
-                }
-            }
-
-            if (expired) {
-                errSpan.textContent = "ERROR: Fecha expirada o inválida";
+            if (year < currentYear || (year === currentYear && month < currentMonth)) {
+                errSpan.textContent = "Fecha expirada";
                 errSpan.style.display = 'block';
                 dateInput.classList.add('input-error');
                 return false;
             }
-
             return true;
         }
 
@@ -479,7 +515,7 @@
             e.target.value = formatted;
             displayNum.textContent = formatted || "#### #### #### ####";
 
-            validateNumber(false); 
+            validateNumber(false);
         });
 
         numInput.addEventListener('blur', () => validateNumber(true));
@@ -502,7 +538,7 @@
             if (raw.length < minLength) {
                 infoSpan.textContent = `Faltan ${minLength - raw.length} dígitos...`;
                 infoSpan.style.display = 'block';
-                if(checkIncomplete) numInput.classList.add('input-error');
+                if (checkIncomplete) numInput.classList.add('input-error');
             } else {
                 if (!checkLuhn(raw)) {
                     errSpan.style.display = 'block';
@@ -521,7 +557,7 @@
             }
             displayDate.textContent = e.target.value || "MM/AA";
 
-            if(e.target.value.length === 5) {
+            if (e.target.value.length === 5) {
                 validateDate();
             } else {
                 dateInput.classList.remove('input-error');
@@ -529,19 +565,19 @@
             }
         });
 
-        dateInput.addEventListener('blur', validateDate);
+        dateInput.addEventListener('blur', () => validateDate());
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             
             const raw = numInput.value.replace(/\D/g, '');
             const isCardValid = (raw.length >= 13 && checkLuhn(raw));
-            const isDateValid = validateDate(); 
+            const isDateValid = validateDate();
 
             if (!isCardValid || !isDateValid) {
                 form.style.transform = "translateX(5px)";
-                setTimeout(()=> form.style.transform = "translateX(-5px)", 50);
-                setTimeout(()=> form.style.transform = "translateX(0)", 100);
+                setTimeout(() => form.style.transform = "translateX(-5px)", 50);
+                setTimeout(() => form.style.transform = "translateX(0)", 100);
                 return;
             }
 
@@ -553,17 +589,97 @@
             const timer = setInterval(() => {
                 count--;
                 counter.textContent = count;
-                if(count <= 0) {
+                if (count <= 0) {
                     clearInterval(timer);
                     counter.style.display = 'none';
                     finalMsg.style.display = 'block';
 
                     setTimeout(() => {
-                        window.location.reload(); 
+                        window.location.reload();
                     }, 1500);
                 }
             }, 1000);
         });
+
+        // ────────────────────────────────────────────────
+        // Generador automático (versión corregida y estable)
+        // ────────────────────────────────────────────────
+        function calcularCheckDigit(numeroSinCheck) {
+            let suma = 0;
+            let esPar = false;
+            for (let i = numeroSinCheck.length - 1; i >= 0; i--) {
+                let digito = parseInt(numeroSinCheck[i]);
+                if (esPar) {
+                    digito *= 2;
+                    if (digito > 9) digito -= 9;
+                }
+                suma += digito;
+                esPar = !esPar;
+            }
+            return (10 - (suma % 10)) % 10;
+        }
+
+        function generarYrellenarAuto() {
+            let bin = document.getElementById('binInput').value.trim().replace(/\D/g, '');
+            if (!bin || bin.length < 6) {
+                alert("Ingresa un BIN válido (mínimo 6 números)");
+                return;
+            }
+
+            // Detectar si es Amex (15 dígitos) o resto (16 dígitos)
+            const isAmex = bin.startsWith('34') || bin.startsWith('37');
+            const targetLength = isAmex ? 15 : 16;
+
+            // Si el BIN ya es más largo, recortamos
+            if (bin.length > targetLength) {
+                bin = bin.substring(0, targetLength);
+            }
+
+            const faltan = targetLength - bin.length;
+
+            if (faltan > 0) {
+                let parteVariable = '';
+                for (let i = 0; i < faltan - 1; i++) {
+                    parteVariable += Math.floor(Math.random() * 10);
+                }
+                const numeroBase = bin + parteVariable;
+                const checkDigit = calcularCheckDigit(numeroBase);
+                bin = numeroBase + checkDigit;
+            }
+
+            // Formatear el número con espacios
+            let formatted = '';
+            if (isAmex) {
+                formatted = bin.slice(0,4) + ' ' + bin.slice(4,10) + ' ' + bin.slice(10);
+            } else {
+                for (let i = 0; i < bin.length; i++) {
+                    if (i > 0 && i % 4 === 0) formatted += ' ';
+                    formatted += bin[i];
+                }
+            }
+
+            // Fecha seleccionada
+            const mes = document.getElementById('mesVenc').value;
+            const anio = document.getElementById('anioVenc').value;
+            const fecha = mes + '/' + anio;
+
+            // Rellenar los campos
+            const numInput = document.getElementById('cardNumber');
+            const dateInput = document.getElementById('cardDate');
+
+            numInput.value = formatted;
+            dateInput.value = fecha;
+
+            // Disparar eventos para actualizar visuales
+            numInput.dispatchEvent(new Event('input'));
+            dateInput.dispatchEvent(new Event('input'));
+
+            // Efecto visual de éxito
+            numInput.style.background = '#1a3a1a';
+            setTimeout(() => {
+                numInput.style.background = 'rgba(0,0,0,0.4)';
+            }, 800);
+        }
     </script>
 </body>
-    </html>
+</html> 
